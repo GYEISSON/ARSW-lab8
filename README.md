@@ -1,6 +1,10 @@
 ### Escuela Colombiana de Ingeniería
 ### Arquitecturas de Software - ARSW
 
+# INTEGRANTES
+Natalia Palacios
+Andres Gualdron
+
 ## Escalamiento en Azure con Maquinas Virtuales, Sacale Sets y Service Plans
 
 ### Dependencias
@@ -85,19 +89,160 @@ Cuando un conjunto de usuarios consulta un enésimo número (superior a 1000000)
 
 **Preguntas**
 
-1. ¿Cuántos y cuáles recursos crea Azure junto con la VM?
-2. ¿Brevemente describa para qué sirve cada recurso?
-3. ¿Al cerrar la conexión ssh con la VM, por qué se cae la aplicación que ejecutamos con el comando `npm FibonacciApp.js`? ¿Por qué debemos crear un *Inbound port rule* antes de acceder al servicio?
-4. Adjunte tabla de tiempos e interprete por qué la función tarda tando tiempo.
-5. Adjunte imágen del consumo de CPU de la VM e interprete por qué la función consume esa cantidad de CPU.
-6. Adjunte la imagen del resumen de la ejecución de Postman. Interprete:
-    * Tiempos de ejecución de cada petición.
-    * Si hubo fallos documentelos y explique.
-7. ¿Cuál es la diferencia entre los tamaños `B2ms` y `B1ls` (no solo busque especificaciones de infraestructura)?
-8. ¿Aumentar el tamaño de la VM es una buena solución en este escenario?, ¿Qué pasa con la FibonacciApp cuando cambiamos el tamaño de la VM?
-9. ¿Qué pasa con la infraestructura cuando cambia el tamaño de la VM? ¿Qué efectos negativos implica?
-10. ¿Hubo mejora en el consumo de CPU o en los tiempos de respuesta? Si/No ¿Por qué?
-11. Aumente la cantidad de ejecuciones paralelas del comando de postman a `4`. ¿El comportamiento del sistema es porcentualmente mejor?
+1. **¿Cuántos y cuáles recursos crea Azure junto con la VM?**
+    
+    Azure crea junto a la máquina virtual 6 recursos.
+
+    1. **Virtual Network**
+    2. **Storage Account**
+    3. **Public IP address**
+    4. **Network Security Group**
+    5. **Network Interface**
+    6. **Disk**
+
+2. **¿Brevemente describa para qué sirve cada recurso?**
+    
+    1. **Virtual Network**: Permite que muchos tipos de recursos de Azure, como las Máquinas Virtuales Azure (VM), se comuniquen de forma segura entre sí,con el Internet y con redes locales on-premise.
+    2. **Storage Account**: Contiene todos los objetos de datos de Azure Storage: bloques, archivos, colas, tablas y discos.
+    3. **Public IP address**: Direcciones IP públicas para los recursos de Azure para comunicarse con otros recursos, con el Internet y con redes locales on-premise.
+    4. **Network Security Group**: Para filtrar el tráfico de red hacia y desde los recursos Azure en una red virtual Azure con un grupo de seguridad de red.
+    5. **Network Interface**: Una interfaz de red permite que una máquina virtual Azure se comunique con el Internet y con recursos locales.
+    6. **Disk**: Almacenamiento de la máquina virtual Azure.
+
+ 3. **¿Al cerrar la conexión ssh con la VM, por qué se cae la aplicación que ejecutamos con el comando `npm FibonacciApp.js`? ¿Por qué debemos crear un *Inbound port rule* antes de acceder al servicio?**
+
+    Al acceder a la máquina virtual mediante SSH, se inicia un proceso para este servicio y todos los comandos realizados por SSH se ejecutarán como hijos de dicho proceso, es por eso por lo que al salir de la sesión SSH, este proceso termina y por ende también acaba los procesos hijos.
+
+    Se debe crear un “Inbound port rule” para permitir el tráfico de la red a un número de puerto específico TCP o UDP perteneciente a la máquina virtual, en este caso el puerto 3000.
+
+4. **Adjunte tabla de tiempos e interprete por qué la función tarda tando tiempo.**
+    
+    Tiempo -- Disco `B1ls`
+
+    |    N     | Fibonacci(N)|
+    |:--------:|:-----------:|
+    |1000000   |    25.04s   |
+    |1010000   |    25.34s   |
+    |1020000   |    25.64s   |
+    |1030000   |    25.89s   |
+    |1040000   |    26.54s   |
+    |1050000   |    27.17s   |
+    |1060000   |    27.99s   |
+    |1070000   |    28.83s   |
+    |1080000   |    28.97s   |
+    |1090000   |    29.48s   |
+
+
+    Tiempo -- Disco `B2ms`
+
+    |    N     | Fibonacci(N)|
+    |:--------:|:-----------:|
+    |1000000   |    22.93s   |
+    |1010000   |    23.95s   |
+    |1020000   |    24.23s   |
+    |1030000   |    23.39s   |
+    |1040000   |    22.74s   |
+    |1050000   |    23.77s   |
+    |1060000   |    24.74s   |
+    |1070000   |    24.48s   |
+    |1080000   |    25.41s   |
+    |1090000   |    26.24s   |
+
+    La función es iterativa, pero no mantiene en memoria resultados previos, por lo que, al ejecutar Fibonacci de un número anteriormente calculado, la función vuelve a realizar todo el algoritmo para obtener la respuesta. 
+    Incrementando los tiempos de ejecución y consumo de CPU.
+ 
+
+5. **Adjunte imágen del consumo de CPU de la VM e interprete por qué la función consume esa cantidad de CPU.**
+
+    *Consumo de CPU*
+
+    ![](images/development/cpu_usage.JPG)
+
+    Fibonacci es un algoritmo que es exhaustivo para el procesador, al implementar la función sin ningún tipo memorización o cache y sobre un procesador de bajas especificaciones, el consumo de este se vuelve evidente, como se muestra en la imagen anterior.
+
+6. **Adjunte la imagen del resumen de la ejecución de Postman. Interprete:**
+    * **Tiempos de ejecución de cada petición.**
+    * **Si hubo fallos documentelos y explique.**
+
+    **Resultados Newman -- `B1ls`**
+    
+    Se muestran los resultados de una de las peticiones concurrentes que se hicieron al servidor.
+
+    ![](images/development/newman.JPG)
+
+    La tabla indica que el tiempo promedio de cada petición es de 29.9s, con un total de 1.2MB aprox. de datos recibidos.
+    
+    Hubo cuatro errores al realizar las peticiones concurrentes, el error era un fallo en la conexión debido a que el servidor no era capaz de dar respuesta a las peticiones.
+
+    ![](images/development/failure.JPG)
+
+    **Consumo Intensivo -- `B1ls`**
+
+    ![](images/development/cpu_usage_newman.JPG)
+
+    La tabla indica que el tiempo promedio de cada petición es de 29.9s, con un total de 1.2MB aprox. de datos recibidos.
+
+    El consumo de la CPU al momento de realizar las peticiones concurrentes llega a alrededor de un 50% de su capacidad.
+
+    **Resultados Newman -- `B2ms`**
+
+    ![](images/development/new_newman.JPG)
+
+    La tabla indica que el tiempo promedio de cada petición es de 32.2s, con un total de 1.59MB aprox. de datos recibidos.
+
+    Hubo dos errores al realizar las peticiones concurrentes, dos menos que usando el disco `B1ls`, el error era un fallo en la conexión debido a que el servidor no era capaz de dar respuesta a las peticiones.
+
+    ![](images/development/failure.JPG)
+
+    **Consumo Intensivo -- `B2ms`**
+
+    ![](images/development/new_cpu_usage_newman.JPG)
+
+    El consumo de la CPU al momento de realizar las peticiones concurrentes llega a alrededor de un 50% de su capacidad.
+
+
+
+7. **¿Cuál es la diferencia entre los tamaños `B2ms` y `B1ls` (no solo busque especificaciones de infraestructura)?**
+
+    El disco `B1ls` esta solamente disponible en Linux y es más económico que el disco `B2ms`.
+
+    **Tabla de Diferencias**
+
+    |Name | vCPU | Memory (GiB) | Temp Storage (SSD) GiB | Base CPU Perf of VM | Max CPU Perf of VM | Max NICs|
+    |:---:|:----:|:------------:|:----------------------:|:-------------------:|:------------------:|:-------:|
+    |B1ls |  1   |     0.5      |            4           |          5%         |         100%       |    2    |
+    |B2ms |  2   |     8        |            16          |          60%        |         200%       |    3    |
+
+
+
+8. **¿Aumentar el tamaño de la VM es una buena solución en este escenario?, ¿Qué pasa con la FibonacciApp cuando cambiamos el tamaño de la VM?**
+
+    Para este escenario puede ser una buena solución si se desea aumentar la cantidad de peticiones que se pueden realizar concurrentemente al servidor, sin embargo, si se desea aumentar el tiempo de respuesta, se debe buscar una mejor manera de implementar la aplicación FibonacciApp.js.
+
+    La aplicación deja de estar en funcionamiento al realizar el cambio de tamaño de la máquina virtual.
+
+9. **¿Qué pasa con la infraestructura cuando cambia el tamaño de la VM? ¿Qué efectos negativos implica?**
+
+    Cuando se cambia el tamaño de la máquina virtual implica que esta se tenga que reiniciar, por lo que la aplicación se detiene y la disponibilidad disminuye. Al iniciar la máquina se debe volver a empezar el servicio de FibonacciApp. 
+
+10. **¿Hubo mejora en el consumo de CPU o en los tiempos de respuesta? Si/No ¿Por qué?**
+
+    Hubo mejora en el consumo de CPU, en los tiempos prácticamente se mantuvo igual con ambos discos. La mejora se debe a que el disco tiene mayor capacidad de procesamiento, una vCPU más,  que permite que las conexiones no se cierren y la aplicación soporte más cálculos.
+
+11. **Aumente la cantidad de ejecuciones paralelas del comando de postman a `4`. ¿El comportamiento del sistema es porcentualmente mejor?**
+
+    **Disco** `B2ms`
+
+    **Cuatro peticiones concurrentes**
+    
+    ![](images/development/four_requests.JPG)
+
+    **Consumo de CPU**
+
+    ![](images/development/cpu_usage_four_requests.JPG)
+
+    Con base a la imagen en la cual se muestra el consumo de la CPU utilizando el disco `B2ms` con dos peticiones concurrentes comparada con la de cuatro peticiones concurrentes, en ambas se puede apreciar que el comportamiento porcentual es similar (50%), sin embargo, la segunda posee mayor cantidad de fallos.
+
 
 ### Parte 2 - Escalabilidad horizontal
 
@@ -172,7 +317,7 @@ http://52.155.223.248/
 http://52.155.223.248/fibonacci/1
 ```
 
-2. Realice las pruebas de carga con `newman` que se realizaron en la parte 1 y haga un informe comparativo donde contraste: tiempos de respuesta, cantidad de peticiones respondidas con éxito, costos de las 2 infraestrucruras, es decir, la que desarrollamos con balanceo de carga horizontal y la que se hizo con una maquina virtual escalada.
+2. Realice las pruebas de carga con `newman` que se realizaron en la parte 1 y haga un informe comparativo donde contraste: tiempos de respuesta, cantidad de peticiones respondidas con éxito, costos de las 2 infraestructuras, es decir, la que desarrollamos con balanceo de carga horizontal y la que se hizo con una maquina virtual escalada.
 
 3. Agregue una 4 maquina virtual y realice las pruebas de newman, pero esta vez no lance 2 peticiones en paralelo, sino que incrementelo a 4. Haga un informe donde presente el comportamiento de la CPU de las 4 VM y explique porque la tasa de éxito de las peticiones aumento con este estilo de escalabilidad.
 
@@ -185,16 +330,119 @@ newman run ARSW_LOAD-BALANCING_AZURE.postman_collection.json -e [ARSW_LOAD-BALAN
 
 **Preguntas**
 
-* ¿Cuáles son los tipos de balanceadores de carga en Azure y en qué se diferencian?, ¿Qué es SKU, qué tipos hay y en qué se diferencian?, ¿Por qué el balanceador de carga necesita una IP pública?
-* ¿Cuál es el propósito del *Backend Pool*?
-* ¿Cuál es el propósito del *Health Probe*?
-* ¿Cuál es el propósito de la *Load Balancing Rule*? ¿Qué tipos de sesión persistente existen, por qué esto es importante y cómo puede afectar la escalabilidad del sistema?.
-* ¿Qué es una *Virtual Network*? ¿Qué es una *Subnet*? ¿Para qué sirven los *address space* y *address range*?
-* ¿Qué son las *Availability Zone* y por qué seleccionamos 3 diferentes zonas?. ¿Qué significa que una IP sea *zone-redundant*?
-* ¿Cuál es el propósito del *Network Security Group*?
-* Informe de newman 1 (Punto 2)
-* Presente el Diagrama de Despliegue de la solución.
+* **¿Cuáles son los tipos de balanceadores de carga en Azure y en qué se diferencian?, ¿Qué es SKU, qué tipos hay y en qué se diferencian?, ¿Por qué el balanceador de carga necesita una IP pública?**
+
+    Existen dos tipos de balanceadores, *Public Load Balance* e *Internal Load Balancer*, *Public Load Balancer* asigna la dirección IP pública y el puerto del tráfico entrante a la dirección IP privada y al puerto de la máquina virtual, mientras que un *Internal Load Balancer* dirige el tráfico sólo  a los recursos que están contenidos en la red virtual.
+
+    ![](images/part2/part2-load-balancers.png)
+
+    SKU representa una unidad de mantenimiento de existencias (Stock Keeping Unit) comprable bajo un producto. Los tipos que existen son el básico y el estandar. 
+    El SKU estándar tiene más características que el básico, unas cuantas diferencias son el soporte de mayor cantidad de instancias, soporte del protocolo HTTPS en sus *Health Probes*, la mayoría de las operaciones se realiza en menos de 30 segundos, pero no es gratis como el SKU básico.
+
+    Un balanceador de carga necesita una IP pública por que actúa como el único punto con el que los clientes interactúan con la aplicación, es el encargado de distribuir el tráfico entre varios nodos disponibles.
+
+* **¿Cuál es el propósito del *Backend Pool*?**
+
+    El *backend pool* se refiere a un conjunto de *backends* que reciben un tráfico similar para su aplicación y responden con el comportamiento esperado, su propósito es definir como los diferentes *backends* se deben evaluar mediante los *health probes*.
+
+* **¿Cuál es el propósito del *Health Probe*?**
+
+    Se envían periódicamente peticiones de sonde HTTP/HTTPS a cada *backend* configurado, con el propósito de determinar proximidad y salud de los *backends* para equilibrar las cargas de las solicitudes de los usuarios.
+
+* **¿Cuál es el propósito de la *Load Balancing Rule*? ¿Qué tipos de sesión persistente existen, por qué esto es importante y cómo puede afectar la escalabilidad del sistema?.**
+
+    El propósito de la *Load Balancing Rule* es distribuir el tráfico que llega al *front* hacia los *backend pools*.
+
+    En Azure existen tres tipos de sesión de persistencia:
+    * **None (hash-based):** Especifica que las solicitudes sucesivas del mismo cliente pueden ser manejadas por cualquier máquina virtual.
+    * **Client IP (source IP affinity 2-tuple):** Especifica que las peticiones sucesivas de la misma dirección IP del cliente serán gestionadas por la misma máquina virtual.
+    * **Client IP and Protocol (Source IP affinity 3-tuple):** Especifica que las solicitudes sucesivas de la misma combinación de dirección IP de cliente y protocolo serán tratadas por la misma máquina virtual.
+
+    Esto es importante porque indica cómo las peticiones deben comportarse al momento de llegar a el balanceador de carga, dependiendo de su configuración decide si esa petición se va a una máquina especifica o a una aleatoria. Afecta la escalabilidad en el sentido de que la configuración debe estar dada por el tipo de aplicación y servicio que se está ofreciendo, por ejemplo, en la aplicación de FibonacciApp.js no es necesario que una máquina mantenga una sesión con una IP específica, cualquier máquina puede atender la petición sin inconvenientes, por lo cual su escalabilidad es excelente. Para aplicaciones en las que se mantiene una sesión con la IP del cliente, se genera cierta dependencia y la escalabilidad se ve afectada.
+
+* **¿Qué es una *Virtual Network*? ¿Qué es una *Subnet*? ¿Para qué sirven los *address space* y *address range*?**
+
+    Una *Virtual Network* es una representación de una red propia en la nube. Es un aislamiento lógico de la nube de Azure dedicada a la suscripción del usuario. Puede utilizar VNets para aprovisionar y gestionar redes virtuales privadas (VPNs) en Azure y, opcionalmente, enlazar las VNets con otras VNets en Azure, o con una infraestructura de TI local.
+
+    Una *Subnet* es un rango de direcciones lógicas. Al mantener una red de gran tamaño, es una buena estrategia dividirla en subredes para reducir el tamaño de dominios de broadcast y hacerla más fácil de administrar. En Azure la *Subnet* permite segmentar la red virtual en una o más subredes y asignar una parte del espacio de direcciones de la *Virtual Network* a cada subred.
+
+    Un *address space* especifica un espacio de direcciones IP privado personalizado utilizando direcciones públicas y privadas. Azure asigna a los recursos en una red virtual una dirección IP privada desde el espacio de direcciones que se asigne.
+
+    Un *address range* es el rango de direcciones IP que se define a partir del *address space*.
+
+* **¿Qué son las *Availability Zone* y por qué seleccionamos 3 diferentes zonas?. ¿Qué significa que una IP sea *zone-redundant*?**
+
+    Las *Availability Zone* son promesas de disponibilidad que protegen las aplicaciones y datos de los fallos del centro de datos.  Las *Avalilability Zones* son lugares físicos únicos dentro de una región de Azure. 
+
+    Se seleccionaron tres zonas de diferentes para no centralizar la aplicación en caso tal de que una de las zonas caiga debido a cualquier tipo de imprevisto.
+
+    Que una IP sea *zone redundant* significa que todos los flujos entrantes o salientes son atendidos por múltiples zonas de disponibilidad en una región simultáneamente utilizando una esa sola dirección de IP.
+
+* **¿Cuál es el propósito del *Network Security Group*?**
+
+    Su propósito es filtrar el tráfico de red hacia y desde los recursos Azure en una red virtual Azure con un grupo de seguridad de red. Continene reglas de seguridad que permiten o niegan el tráfico entrante a la red.
 
 
+* **Informe de newman 1 (Punto 2)**
+
+    **Resumen newman 1**
+
+    ![](images/horizontal/newman1.jpg)
+
+    **Resumen newman 2**
+
+    ![](images/horizontal/newman2.jpg)
+
+    **Tabla Comparativa Escalabilidad (Horizontal vs Vertical)**
+
+    (Costo calculado con *Azure Calculator*)
+
+    |ESCALAMIENTO| REGIÓN        | SO  | TIPO | NIVEL  | INSTANCIA |CANTIDAD DE VM| HORAS       | COSTO x MES | TIEMPO  | PETICIONES EXITOSAS|
+    |:----------:|:-------------:|:---:|:----:|:------:|:---------:|:------------:|:-----------:|:-----------:|:-------:|:------------------:|
+    |Vertical    |Este de EE. UU.|Linux|Ubuntu|Estándar|B2ms       |       1      |      500    |    41.60$   | 33.2s   |         16         |
+    |Horizontal  |Este de EE. UU.|Linux|Ubuntu|Estándar|B1ls       |       4      |      500    |    10.40$   | 23.45s  |         20         |
+
+* **Informe de newman 2 (Punto 3)**
+
+    **Cuatro peticiones concurrentes**
+
+    ![](images/horizontal/four_newman.JPG)
+
+    **Máquina Virtual 1**
+
+    ![](images/horizontal/vm1_cpu.JPG)
+
+    **Máquina Virtual 2**
+    
+    ![](images/horizontal/vm2_cpu.JPG)
+
+    **Máquina Virtual 3**
+
+    ![](images/horizontal/vm3_cpu.JPG)
+
+    **Máquina Virtual 4**
+
+    ![](images/horizontal/vm4_cpu.JPG)
+
+    Con este estilo de escalabilidad, fallaron por proceso newman una o dos peticiones. El éxito de estas peticiones es principalmente dado a que el balanceador de carga permite equilibrar las carga sobre las aplicaciones en las cuatro máquinas virtuales desplegadas, como se aprecia en las imágenes, dejando que estas calculen los resultados de las peticiones sin sobrecargarse.
+
+* **Presente el Diagrama de Despliegue de la solución.**
+
+    ![](images/horizontal/deployment.png)
 
 
+## Referencias
+* https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview
+* https://docs.microsoft.com/en-us/azure/storage/common/storage-account-overview
+* https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-ip-addresses-overview-arm
+* https://docs.microsoft.com/en-us/azure/virtual-network/security-overview
+* https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-network-interface
+* https://docs.microsoft.com/en-us/azure/virtual-machines/windows/managed-disks-overview
+* https://azure.microsoft.com/es-es/services/storage/disks/
+* https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-firewall/create-an-inbound-port-rule
+* https://docs.microsoft.com/en-us/azure/frontdoor/front-door-backend-pool
+* https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/virtual-network/virtual-networks-faq.md
+* https://docs.aws.amazon.com/es_es/elasticloadbalancing/latest/application/introduction.html
+* https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview#skus
+* https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-standard-availability-zones
+* https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-distribution-mode
